@@ -84,6 +84,10 @@ void mpu_who_am_i(void);
 msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val);
 
 
+//Serial commands
+void serial_set_control(bool set);
+void serial_read_acc_axis(uint16_t *xr);
+
 
 
 

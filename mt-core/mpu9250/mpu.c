@@ -11,15 +11,26 @@
 THD_WORKING_AREA(ThMPU, MPU_THREAD_STACK_SIZE);
 
 
+//mutex 
+static mutex_t  qmtx;
 
 
 //tx/rx buffers
 uint8_t txbuf[5];
 uint8_t rxbuf[5];
 
+//Reading enable variable
+static bool read_enable = FALSE;
 
 //Accelerometer scale reference value
 float acc_scale_ref  = 0.0f;
+
+//Row axis value
+uint16_t xr_axis = 0;
+
+
+
+
 
 
 //Reset MPU to defaault settings
@@ -80,11 +91,11 @@ void mpu_init(void){
 
   msg_t res = MSG_OK;
 
+  chMtxObjectInit(&qmtx);
+
 
   //reset sensor
   mpu_reset();
-
-
 
   //activate accelerometer and gyro
   txbuf[0] = PWR_MGMT_2;
@@ -120,43 +131,9 @@ void mpu_init(void){
   }
 
 
-
   mpu_who_am_i();
 
 }
-
-
-
-
-/**
- * @brief Mpu reading thread
- */
-void mpum_thread(void *p){
-
-  (void)p;
-  chRegSetThreadName("MPU Thread");
-  chThdSetPriority(MPU_THREAD_PRIORITY);
-
-
-  while (true)
-  {
-
-    chThdSleepMilliseconds(100); 
-  }
-  
-
-}
-
-
-
-
-
-
-
-
-
-
-
 
 
 //Check communication to MPU by requesting read value from check register
@@ -175,6 +152,7 @@ void mpu_who_am_i(void) {
   }
 
 }
+
 
 
 /**
@@ -212,5 +190,68 @@ msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val){
   return MSG_OK;
 }
 
+
+
+/**
+ * @brief Mpu reading thread
+ */
+void mpum_thread(void *p){
+
+  (void)p;
+  chRegSetThreadName("MPU Thread");
+  chThdSetPriority(MPU_THREAD_PRIORITY);
+
+  
+
+  //Read accelerometer data
+  while (true)
+  {
+    chMtxLock(&qmtx);
+
+    if(read_enable){
+
+      mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
+    }
+
+    chMtxUnlock(&qmtx);
+
+    chThdSleepMilliseconds(100); 
+  }
+  
+
+}
+
+
+
+
+
+//Serial Commands
+/**
+ * @brief Enable/Disable read operation
+ */
+void serial_set_control(bool set){
+
+  chMtxLock(&qmtx);
+
+  if(set){
+    read_enable = TRUE;
+  }else{
+    read_enable = FALSE;
+  }
+
+  
+
+  chMtxUnlock(&qmtx);
+}
+
+
+/**
+ * @brief Request lates axis values
+ */
+void serial_read_acc_axis(uint16_t *xr){
+  chMtxLock(&qmtx);
+    *xr = xr_axis;
+  chMtxUnlock(&qmtx);
+}
 
 

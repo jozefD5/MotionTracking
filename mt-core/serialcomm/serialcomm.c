@@ -16,8 +16,26 @@
 
 THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 
-msg_t strChar;                                  //serial read character
-char  strbuf[SERIAL_BUFFER_SIZE];               //serial charecter buffer
+//mutex 
+static mutex_t  qmtx;
+
+//Enable/disable reading of acc
+static bool read_enable = FALSE;
+
+
+//Serial read character and charecter buffer
+msg_t strChar;                                  
+char  strbuf[SERIAL_BUFFER_SIZE];           
+
+
+//Row axis value
+static uint16_t xr_axis = 0;
+
+
+
+
+
+
 
 
 /**
@@ -28,6 +46,11 @@ void serialcomm_thread(void *p) {
     (void)p;
     chRegSetThreadName("Serial Comm Thread");
     chThdSetPriority(SERIALCOMM_THREAD_PRIORITY);
+
+
+    chMtxObjectInit(&qmtx);
+
+
 
 
 
@@ -44,6 +67,7 @@ void serialcomm_thread(void *p) {
 
     while (true)
     {
+        //Inpur Section
         //Wait for event then read flag
         chEvtWaitOneTimeout(EVENT_MASK(1), TIME_MS2I(10));
         chSysLock();
@@ -61,25 +85,42 @@ void serialcomm_thread(void *p) {
                strChar = chnGetTimeout(&SD2, TIME_IMMEDIATE);
 
                 if(strChar != Q_TIMEOUT){
-
-                    //Only foir testing to check serial 
-                    //print_serial("Value: ");
-                    //chprintf((BaseSequentialStream*)&SD2, "%c", (char)strChar);
-
                     strbuf[i] = (char)strChar;
                     i++;
                 }
 
 
             }while ( strChar != 0x0d && i != (SERIAL_BUFFER_SIZE -1)); 
-            print_serial("\n\rstring: \n\r");
-            print_serial(strbuf); 
+
+
+            //Decoding serial commands
+            commad_check(strbuf);
         }
 
 
-        //Decoding serial commands
-        commad_check(strbuf);
-    
+
+
+        //Output section
+        chMtxLock(&qmtx);
+
+        if(read_enable){
+
+            //Rad axis
+            serial_read_acc_axis(&xr_axis);
+
+
+            //Output data to serial
+            //chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
+
+        }
+
+        chMtxUnlock(&qmtx);
+
+
+
+
+
+
 
         chThdSleepMilliseconds(2); 
     }
@@ -98,11 +139,22 @@ void commad_check(char* commandStrl){
     if( strcmp(commandStrl, ser_start) == 0 ){
         print_serial("cmd: mt start\n\r");
 
+        chMtxLock(&qmtx);
+            read_enable = TRUE;
+        chMtxUnlock(&qmtx);
+
+        serial_set_control(TRUE);
+
 
     //Stop motion tracking
     }else if( strcmp(commandStrl, ser_start) == 0 ){
-         print_serial("cmd: mt stop\n\r");
+        print_serial("cmd: mt stop\n\r");
 
+        chMtxLock(&qmtx);
+            read_enable = FALSE;
+        chMtxUnlock(&qmtx);
+
+        serial_set_control(FALSE);
 
 
     }else{
