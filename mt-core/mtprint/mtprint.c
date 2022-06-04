@@ -35,18 +35,22 @@ void serial_init(void){
  * @brief   Custom print function to print string to serial terminal
  * @param[stringVal]  row string of type char[]
  */
-void print_serial(char* stringVal){
+void serial_print(char* stringVal){
   chMtxLock(&qmtx);
   sdWrite(&SD2, (uint8_t*)stringVal, strlen(stringVal));
   chMtxUnlock(&qmtx);
 }
 
 
-void read_serial(uint8_t* stringVal){
+/**
+ * @brief 
+ * @param [in]  stringVal   pointer to buffer with lingthe of 'SERIAL_BUFFER_SIZE'
+ */
+msg_t serial_read(uint8_t* stringVal){
+  
   chMtxLock(&qmtx);
-
-  sdRead(&SD2, stringVal, SERIAL_BUFFER_SIZE);
-  //sdReadTimeout(&SD2, stringVal, 6, TIME_MS2I(50));
-
+  msg_t t = sdReadTimeout(&SD2, stringVal, SERIAL_BUFFER_SIZE, TIME_MS2I(50));
   chMtxUnlock(&qmtx);
+
+  return t;
 }

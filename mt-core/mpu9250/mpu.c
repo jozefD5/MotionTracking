@@ -103,9 +103,9 @@ void mpu_init(void){
 
   res = i2c1_transmit(MPU_ADDR, txbuf, 2, rxbuf, 0, MPU_TIME_LIM);
   if(res == MSG_OK){
-    print_serial("Activate acc and gyro: OK\n\r");
+    serial_print("Activate acc and gyro: OK\n\r");
   }else{
-    print_serial("Activate acc and gyro: Failed\n\r");
+    serial_print("Activate acc and gyro: Failed\n\r");
   }
 
 
@@ -116,18 +116,18 @@ void mpu_init(void){
 
   res = i2c1_transmit(MPU_ADDR, txbuf, 2, rxbuf, 0, MPU_TIME_LIM);
   if(res == MSG_OK){
-    print_serial("Acc frequency set: OK\n\r");
+    serial_print("Acc frequency set: OK\n\r");
   }else{
-    print_serial("Acc frequency set: Failed\n\r");
+    serial_print("Acc frequency set: Failed\n\r");
   }
 
 
 
   //Set accelerometr range
   if(mpu_acc_range(ACCEL_RANGE_2G)){
-    print_serial("Acc renge set: OK\n\r");
+    serial_print("Acc renge set: OK\n\r");
   }else{
-    print_serial("Acc renge set: FailedS\n\r");
+    serial_print("Acc renge set: FailedS\n\r");
   }
 
 
@@ -148,7 +148,7 @@ void mpu_who_am_i(void) {
     chprintf((BaseSequentialStream*)&SD2, "WAI: %d\n\r", rxbuf[0]);
 
   }else{
-    print_serial("WAI: Error: I2C\n\r");
+    serial_print("WAI: Error: I2C\n\r");
   }
 
 }
@@ -203,14 +203,14 @@ void mpum_thread(void *p){
 
   
 
-  //Read accelerometer data
+
   while (true)
   {
+
+    //If red_enabled is ser via serial thread, read accelerometer data
     chMtxLock(&qmtx);
 
     if(read_enable){
-      print_serial("Reading Axis\n\r");
-
       mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
     }
 
@@ -218,8 +218,6 @@ void mpum_thread(void *p){
 
     chThdSleepMilliseconds(500); 
   }
-  
-
 }
 
 

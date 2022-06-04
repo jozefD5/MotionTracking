@@ -16,17 +16,20 @@
 
 THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 
+
+
 //mutex 
 static mutex_t  qmtx;
 
 //Enable/disable reading of acc
 static bool read_enable = FALSE;
 
-
 //Serial read character and charecter buffer
 msg_t strChar;                                  
 uint8_t  strbuf[SERIAL_BUFFER_SIZE];           
 
+//Read iteration counter
+int32_t rd_count = 0;
 
 //Row axis value
 static uint16_t xr_axis = 0;
@@ -47,80 +50,49 @@ void serialcomm_thread(void *p) {
     chRegSetThreadName("Serial Comm Thread");
     chThdSetPriority(SERIALCOMM_THREAD_PRIORITY);
 
+    //Serial transmission checking variable
+    msg_t sdt = MSG_OK;
 
+    //Init mutex
     chMtxObjectInit(&qmtx);
-
-
-
-
-
-    //Setup UART read functionality 
-    event_listener_t UartData;      //register event listner
-    eventflags_t flags;             //event flag
-
-    //Registers event listner on event source
-    chEvtRegisterMask((event_source_t *)chnGetEventSource(&SD2), &UartData, EVENT_MASK(1));
-    
 
     chThdSleepMilliseconds(100); 
 
 
+
+    
     while (true)
     {
         //Inpur Section
-        //Wait for event then read flag
-        chEvtWaitOneTimeout(EVENT_MASK(1), TIME_MS2I(10));
-        chSysLock();
-        flags = chEvtGetAndClearFlags(&UartData);
-        chSysUnlock();
+        //Process input data, only check command if read finished without error
+        sdt = serial_read(strbuf);
 
-
-        //Read serial data
-        //heck flag and if data are available
-        if(flags & CHN_INPUT_AVAILABLE){
-           int32_t i = 0;
-
-            //Fill serial buffer until enter is pressed or buffer is full
-            do{
-               strChar = chnGetTimeout(&SD2, TIME_IMMEDIATE);
-
-                if(strChar != Q_TIMEOUT){
-                    strbuf[i] = (char)strChar;
-                    i++;
-                }
-
-
-            }while ( i != (SERIAL_BUFFER_SIZE -1)); 
-
-
-            //Read serial and flush (reset) input queu
-            iqResetI(&SD2.iqueue);
-
-            //Process input data
+        if(sdt != MSG_OK){
             commad_check((char*)strbuf);
         }
+
+        //Flush (reset) input queu
+        iqResetI(&SD2.iqueue);
         
 
 
         //Output section
-        /*
         chMtxLock(&qmtx);
-        if(read_enable){
+        if(read_enable && rd_count > SERIAL_COUNTER_LIMIT){
 
             //Rad axis
-            //serial_read_acc_axis(&xr_axis);
+            serial_read_acc_axis(&xr_axis);
 
 
             //Output data to serial
-            //chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
+            chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
 
+            rd_count = 0;
         }
         chMtxUnlock(&qmtx);
-        */
+        
 
-
-
-
+        rd_count++;
         chThdSleepMilliseconds(100); 
     }
     
@@ -128,30 +100,36 @@ void serialcomm_thread(void *p) {
 
 
 /**
- * @brief                   Serial command response, function checks if serial input
- *                          matches any of the available commands
- * @param [in] commandStrl  string to be checked
+ * @brief      Serial command response, function checks if serial input
+ *             matches any of the available commands
+ * @param [in] commandStrl   string to be checked
  */
 void commad_check(char* commandStrl){
 
     //Start motion tracking
-    if( strcmp(commandStrl, ser_start) == 0 ){
-        print_serial("cmd: mt start\n\r");
-
+    if( strcmp(commandStrl, SER_START) == 0 ){
+        serial_print("cmd: mt start\n\r");
         serial_set_control(TRUE);
+
+        chMtxLock(&qmtx);
+            read_enable = TRUE;
+        chMtxUnlock(&qmtx);
 
 
     //Stop motion tracking
-    }else if( strcmp(commandStrl, ser_start) == 0 ){
-        print_serial("cmd: mt stop\n\r");
-
+    }else if( strcmp(commandStrl, SER_STOP) == 0 ){
+        serial_print("cmd: mt stop\n\r");
         serial_set_control(FALSE);
+
+        chMtxLock(&qmtx);
+            read_enable = FALSE;
+        chMtxUnlock(&qmtx);
 
 
     }else{
-        print_serial("cmd: unknown command: ");
-        print_serial(commandStrl);
-        print_serial("\n\r");
+        serial_print("cmd: unknown command: ");
+        serial_print(commandStrl);
+        serial_print("\n\r");
     }
 
 
