@@ -26,9 +26,6 @@
 
 
 
-/**
- * @brief Serial communication thread
- */ 
 
 
 /*
@@ -43,9 +40,9 @@ int main(void) {
   //init serial/UART 
   serial_init();
 
-  print_serial("\n--------------------------------------\n\r");
-  print_serial("\n--- Starting MotionTracking: V:0.1 ---\n\r");
-  print_serial("\n--------------------------------------\n\r");
+  serial_print("\n--------------------------------------\n\r");
+  serial_print("\n--- Starting MotionTracking: V:0.1 ---\n\r");
+  serial_print("\n--------------------------------------\n\r");
 
 
   //init custom components
@@ -59,11 +56,11 @@ int main(void) {
   //Creates threads
   //Serial 
   (void)chThdCreateStatic(ThdSerialComm, sizeof(ThdSerialComm), NORMALPRIO +1, (tfunc_t)serialcomm_thread, NULL);
-  print_serial("Serial thread: running\n\r");
+  serial_print("Serial thread: running\n\r");
 
   //MPU
   (void)chThdCreateStatic(ThMPU, sizeof(ThMPU), NORMALPRIO +1, (tfunc_t)mpum_thread, NULL);
-  print_serial("MPU thread: running\n\r");
+  serial_print("MPU thread: running\n\r");
 
 
 
@@ -71,7 +68,7 @@ int main(void) {
   //Normal main() thread
   while (true) {
     
-    chThdSleepMilliseconds(500);
+    chThdSleepMilliseconds(1000);
   } 
 
   

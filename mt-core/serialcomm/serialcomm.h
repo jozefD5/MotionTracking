@@ -17,14 +17,16 @@
 extern THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 
 
-//Serial buffer (string) max size
-#define SERIAL_BUFFER_SIZE       20
+
+//Sets counter max limit, controls frequency of printing accelerometer data
+//with delay of 100ms and counter set to 5, a frequency=2Hz
+#define  SERIAL_COUNTER_LIMIT     5
 
 
 
 //Serial commands
-#define  ser_start              "cmdstart/n"
-#define  ser_stop               "cmdstop/n"
+#define  SER_START              "cmdstr"         //start accelerometer reading
+#define  SER_STOP               "cmdstp"         //stop accelerometer reading
 
 
 
