@@ -40,3 +40,13 @@ void print_serial(char* stringVal){
   sdWrite(&SD2, (uint8_t*)stringVal, strlen(stringVal));
   chMtxUnlock(&qmtx);
 }
+
+
+void read_serial(uint8_t* stringVal){
+  chMtxLock(&qmtx);
+
+  sdRead(&SD2, stringVal, SERIAL_BUFFER_SIZE);
+  //sdReadTimeout(&SD2, stringVal, 6, TIME_MS2I(50));
+
+  chMtxUnlock(&qmtx);
+}

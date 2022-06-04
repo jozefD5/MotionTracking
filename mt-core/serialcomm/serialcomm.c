@@ -25,7 +25,7 @@ static bool read_enable = FALSE;
 
 //Serial read character and charecter buffer
 msg_t strChar;                                  
-char  strbuf[SERIAL_BUFFER_SIZE];           
+uint8_t  strbuf[SERIAL_BUFFER_SIZE];           
 
 
 //Row axis value
@@ -90,39 +90,38 @@ void serialcomm_thread(void *p) {
                 }
 
 
-            }while ( strChar != 0x0d && i != (SERIAL_BUFFER_SIZE -1)); 
+            }while ( i != (SERIAL_BUFFER_SIZE -1)); 
 
 
-            //Decoding serial commands
-            commad_check(strbuf);
+            //Read serial and flush (reset) input queu
+            iqResetI(&SD2.iqueue);
+
+            //Process input data
+            commad_check((char*)strbuf);
         }
-
-
+        
 
 
         //Output section
+        /*
         chMtxLock(&qmtx);
-
         if(read_enable){
 
             //Rad axis
-            serial_read_acc_axis(&xr_axis);
+            //serial_read_acc_axis(&xr_axis);
 
 
             //Output data to serial
             //chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
 
         }
-
         chMtxUnlock(&qmtx);
+        */
 
 
 
 
-
-
-
-        chThdSleepMilliseconds(2); 
+        chThdSleepMilliseconds(100); 
     }
     
 }
@@ -139,10 +138,6 @@ void commad_check(char* commandStrl){
     if( strcmp(commandStrl, ser_start) == 0 ){
         print_serial("cmd: mt start\n\r");
 
-        chMtxLock(&qmtx);
-            read_enable = TRUE;
-        chMtxUnlock(&qmtx);
-
         serial_set_control(TRUE);
 
 
@@ -150,15 +145,13 @@ void commad_check(char* commandStrl){
     }else if( strcmp(commandStrl, ser_start) == 0 ){
         print_serial("cmd: mt stop\n\r");
 
-        chMtxLock(&qmtx);
-            read_enable = FALSE;
-        chMtxUnlock(&qmtx);
-
         serial_set_control(FALSE);
 
 
     }else{
-        print_serial("cmd: unknown command\n\r");
+        print_serial("cmd: unknown command: ");
+        print_serial(commandStrl);
+        print_serial("\n\r");
     }
 
 

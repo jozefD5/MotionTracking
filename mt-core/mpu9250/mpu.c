@@ -209,13 +209,14 @@ void mpum_thread(void *p){
     chMtxLock(&qmtx);
 
     if(read_enable){
+      print_serial("Reading Axis\n\r");
 
       mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
     }
 
     chMtxUnlock(&qmtx);
 
-    chThdSleepMilliseconds(100); 
+    chThdSleepMilliseconds(500); 
   }
   
 

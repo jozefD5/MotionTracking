@@ -17,14 +17,13 @@
 extern THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 
 
-//Serial buffer (string) max size
-#define SERIAL_BUFFER_SIZE       20
+
 
 
 
 //Serial commands
-#define  ser_start              "cmdstart/n"
-#define  ser_stop               "cmdstop/n"
+#define  ser_start              "cmdstr"
+#define  ser_stop               "cmdstp"
 
 
 
