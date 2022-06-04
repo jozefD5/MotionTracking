@@ -1,10 +1,10 @@
 /**
- * @ brief mtprint: serial (uart) printing functions and settings
+ * @brief mtprint: serial (uart) printing functions and settings
  */
 #ifndef _MT_PRINT_H_
 #define _MT_PRINT_H_
 
-//Serial buffer (string) max size
+//Serial buffer max size (bytes)
 #define SERIAL_BUFFER_SIZE       6
 
 

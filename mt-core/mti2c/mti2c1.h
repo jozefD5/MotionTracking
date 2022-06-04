@@ -4,8 +4,6 @@
 #ifndef _MTCORE_I2C1_H_
 #define _MTCORE_I2C1_H_
 
-//#include "ch.h"
-
 
 
 void mti2c_init(void);

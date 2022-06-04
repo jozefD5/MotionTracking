@@ -17,9 +17,10 @@
 extern THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 
 
-//Sets counter max limit, controls frequency of printing accelerometer data
-#define  SERIAL_COUNTER_LIMIT     5
 
+//Sets counter max limit, controls frequency of printing accelerometer data
+//with delay of 100ms and counter set to 5, a frequency=2Hz
+#define  SERIAL_COUNTER_LIMIT     5
 
 
 

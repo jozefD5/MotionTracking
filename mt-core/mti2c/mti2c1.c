@@ -15,9 +15,7 @@
 char uart_buf[30];
 
 
-
-
-//config
+//I2C driver config
 static const I2CConfig i2ccfg = {
   STM32_TIMINGR_PRESC(15U) |
   STM32_TIMINGR_SCLDEL(4U) | STM32_TIMINGR_SDADEL(2U) |
@@ -28,8 +26,9 @@ static const I2CConfig i2ccfg = {
 
 
 
-
-//Start I2C-1 and setup required pins
+/**
+ * @brief Start I2C-1 and setup required pins
+ */
 void mti2c_init(void){
   i2cStart(&I2CD1, &i2ccfg);
 

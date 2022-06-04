@@ -38,11 +38,8 @@ static uint16_t xr_axis = 0;
 
 
 
-
-
-
 /**
- * @brief     Serial communication thread main function
+ * @brief Serial communication thread main function
  */
 void serialcomm_thread(void *p) {
 
@@ -100,8 +97,8 @@ void serialcomm_thread(void *p) {
 
 
 /**
- * @brief      Serial command response, function checks if serial input
- *             matches any of the available commands
+ * @brief Serial command response, function checks if serial input
+ *        matches any of the available commands
  * @param [in] commandStrl   string to be checked
  */
 void commad_check(char* commandStrl){

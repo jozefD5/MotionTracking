@@ -1,3 +1,4 @@
+#MT (Motion Tracking)
 #Project monitors device's mosition using accelerometer sensor (mpu9250)
 Project was setup to work with VSCode on Linux machine or in Docker container (volume).
 
@@ -6,6 +7,11 @@ Project 'mt-core' was setup for STM32 NUCLEO-F02EB development board
 mcu: STM32F072RB
 sensor: accelerometer MPU-9250
 
+
+#Project Info
+main function (entery point) is located in mt-nucleo/main.c
+mt-core folder acts as libary and component folder which contains all other source and header files. This includes
+threads, preprocessors, serial drivers, i2c driver etc.
 
 
 

@@ -1,3 +1,6 @@
+/**
+ * @brief mpu.h: MPU sensor control thread and functions  
+ */
 #ifndef _MPU_9250_
 #define _MPU_9250_
 
@@ -84,11 +87,13 @@ void mpu_who_am_i(void);
 msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val);
 
 
-//Serial commands
+
+
+
+
+//Serial commands, function prototypes
 void serial_set_control(bool set);
 void serial_read_acc_axis(uint16_t *xr);
-
-
 
 
 

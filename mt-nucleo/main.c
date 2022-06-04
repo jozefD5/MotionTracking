@@ -26,9 +26,6 @@
 
 
 
-/**
- * @brief Serial communication thread
- */ 
 
 
 /*

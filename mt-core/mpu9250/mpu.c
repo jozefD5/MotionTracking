@@ -1,3 +1,6 @@
+/**
+ * @brief mpu.c: MPU sensor control thread and functions  
+ */
 #include "ch.h"
 #include "hal.h"
 #include "mpu.h"
