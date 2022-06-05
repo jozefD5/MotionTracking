@@ -47,7 +47,10 @@
             "compilerPath": "/usr/bin/arm-none-eabi-gcc",
             "cStandard": "c17",
             "cppStandard": "c++17",
-            "intelliSenseMode": "linux-gcc-arm"
+            "intelliSenseMode": "linux-gcc-arm",
+            "compilerArgs": [
+                "-u_printf_float"
+            ]
         }
     ],
     "version": 4

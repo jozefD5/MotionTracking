@@ -55,7 +55,7 @@ typedef enum{
 #define  ACCEL_CONFIG          0x1C      //accelerometer settngs, range sellection and self-test
 #define  ACCEL_CONFIG_2        0x1D      //accelerometer settings, frequency and low-pass filter
 
-
+ 
 
 
 //Config settings
@@ -79,21 +79,22 @@ typedef enum{
 
 
 
+
+
+
 //Function Prototypes
 void mpu_init(void);
 void mpum_thread(void *p);
 
 void mpu_who_am_i(void);
 msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val);
-
-
-
+void mpu_acc_update(void);
 
 
 
 //Serial commands, function prototypes
 void serial_set_control(bool set);
-void serial_read_acc_axis(uint16_t *xr);
+void serial_read_acc_axis(float *x_g);
 
 
 

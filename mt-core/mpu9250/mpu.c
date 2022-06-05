@@ -17,6 +17,9 @@ THD_WORKING_AREA(ThMPU, MPU_THREAD_STACK_SIZE);
 //mutex 
 static mutex_t  qmtx;
 
+//Accelerometer range setting variable
+AccelRange accRange = ACCEL_RANGE_2G;
+
 
 //tx/rx buffers
 uint8_t txbuf[5];
@@ -30,6 +33,10 @@ float acc_scale_ref  = 0.0f;
 
 //Row axis value
 uint16_t xr_axis = 0;
+
+
+//Acc in g's
+float xg_axis = 0.0f;
 
 
 
@@ -88,7 +95,6 @@ static bool mpu_acc_range(AccelRange range){
 }
 
 
-
 //Initiate MPU
 void mpu_init(void){
 
@@ -127,7 +133,7 @@ void mpu_init(void){
 
 
   //Set accelerometr range
-  if(mpu_acc_range(ACCEL_RANGE_2G)){
+  if(mpu_acc_range(accRange)){
     serial_print("Acc renge set: OK\n\r");
   }else{
     serial_print("Acc renge set: FailedS\n\r");
@@ -155,7 +161,6 @@ void mpu_who_am_i(void) {
   }
 
 }
-
 
 
 /**
@@ -195,6 +200,25 @@ msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val){
 
 
 
+
+/**
+ * Update accelerometer axis values
+ */
+void mpu_acc_update(void){
+
+  mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
+
+
+  xg_axis = (float)xr_axis * acc_scale_ref;
+  
+  chprintf((BaseSequentialStream*)&SD2, "x: %f\r\n", acc_scale_ref);
+  chprintf((BaseSequentialStream*)&SD2, "x: %d\r\n", xr_axis);
+  chprintf((BaseSequentialStream*)&SD2, "x: %.6f\r\n\n", xg_axis);
+
+}
+
+   
+
 /**
  * @brief Mpu reading thread
  */
@@ -214,7 +238,7 @@ void mpum_thread(void *p){
     chMtxLock(&qmtx);
 
     if(read_enable){
-      mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
+      mpu_acc_update();
     }
 
     chMtxUnlock(&qmtx);
@@ -241,8 +265,6 @@ void serial_set_control(bool set){
     read_enable = FALSE;
   }
 
-  
-
   chMtxUnlock(&qmtx);
 }
 
@@ -250,10 +272,12 @@ void serial_set_control(bool set){
 /**
  * @brief Request lates axis values
  */
-void serial_read_acc_axis(uint16_t *xr){
+void serial_read_acc_axis(float *x_g){
   chMtxLock(&qmtx);
-    *xr = xr_axis;
+    *x_g = xg_axis;
   chMtxUnlock(&qmtx);
 }
+
+
 
 

@@ -32,7 +32,7 @@ uint8_t  strbuf[SERIAL_BUFFER_SIZE];
 int32_t rd_count = 0;
 
 //Row axis value
-static uint16_t xr_axis = 0;
+static float x_axis = 0.0f;
 
 
 
@@ -56,7 +56,7 @@ void serialcomm_thread(void *p) {
     chThdSleepMilliseconds(100); 
 
 
-
+ 
     
     while (true)
     {
@@ -78,11 +78,11 @@ void serialcomm_thread(void *p) {
         if(read_enable && rd_count > SERIAL_COUNTER_LIMIT){
 
             //Rad axis
-            serial_read_acc_axis(&xr_axis);
+            serial_read_acc_axis(&x_axis);
 
 
             //Output data to serial
-            chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
+            //chprintf((BaseSequentialStream*)&SD2, "x: %f\r\n", x_axis);
 
             rd_count = 0;
         }
