@@ -2,10 +2,14 @@
 #Project monitors device's mosition using accelerometer sensor (mpu9250)
 Project was setup to work with VSCode on Linux machine or in Docker container (volume).
 
+System also supports serial commands, those are available in '/mt-core/serialcomm/serialcomm.h'
+Serial interface can via custom Windows UI application, project is named MotionTracking-UI (build in .net6 WPF).
+Also, system can be operated via standard serial tool e.g. Mobaxterm
+
 #Hardware
 Project 'mt-core' was setup for STM32 NUCLEO-F02EB development board
 mcu: STM32F072RB
-sensor: accelerometer MPU-9250
+sensor: accelerometer MPU-9250, connected to nucleo bord via I2C-1
 
 
 #Project Info

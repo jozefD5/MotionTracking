@@ -4,6 +4,7 @@
 #include "ch.h"
 #include "hal.h"
 #include "mpu.h"
+#include <math.h>
 
 #include "../mtprint/mtprint.h"
 #include "../mti2c/mti2c1.h"
@@ -18,7 +19,7 @@ THD_WORKING_AREA(ThMPU, MPU_THREAD_STACK_SIZE);
 static mutex_t  qmtx;
 
 //Accelerometer range setting variable
-AccelRange accRange = ACCEL_RANGE_2G;
+static AccelRange accRange = ACCEL_RANGE_16G;
 
 
 //tx/rx buffers
@@ -26,18 +27,27 @@ uint8_t txbuf[5];
 uint8_t rxbuf[5];
 
 //Reading enable variable
-static bool read_enable = FALSE;
+static bool read_enable = TRUE;
 
 //Accelerometer scale reference value
-float acc_scale_ref  = 0.0f;
+static float acc_scale_ref  = 0.0f;
 
+//Axis value
 //Row axis value
-uint16_t xr_axis = 0;
+static uint16_t axis_row_x = 0;
+static uint16_t axis_row_y = 0;
+static uint16_t axis_row_z = 0;
 
+//Axis in g's
+static float axis_x = 0.0f;
+static float axis_y = 0.0f;
+static float axis_z = 0.0f;
 
-//Acc in g's
-float xg_axis = 0.0f;
+//Axis in degrees
+static float axis_ang_x = 0.0f;
+static float axis_ang_y = 0.0f;
 
+ 
 
 
 
@@ -54,48 +64,85 @@ static void mpu_reset(void){
 }
 
 
-//Set accelerometter range
-static bool mpu_acc_range(AccelRange range){
+//Check communication to MPU by requesting read value from check register
+static void mpu_who_am_i(void) {
 
   msg_t res = MSG_OK;
+  txbuf[0] = 0x75;
 
-  txbuf[0] = ACCEL_CONFIG;
-  txbuf[1] = range;
+  res = i2c1_transmit(MPU_ADDR, txbuf, 1, rxbuf, 1, MPU_TIME_LIM);
 
-  switch (range){
+  if(res == MSG_OK){
+    chprintf((BaseSequentialStream*)&SD2, "WAI: %d\n\r", rxbuf[0]);
 
-    case ACCEL_RANGE_4G:{
-      acc_scale_ref = 4.0f / 32767.5f;
-      break;
-    }
-
-    case ACCEL_RANGE_8G:{
-      acc_scale_ref = 8.0f / 32767.5f;
-      break;
-    }
-
-    case ACCEL_RANGE_16G:{
-      acc_scale_ref = 16.0f / 32767.5f;
-      break;
-    }
-
-    case ACCEL_RANGE_2G:
-    default: {
-      acc_scale_ref = 2.0f / 32767.5f;
-      break;
-    }
+  }else{
+    serial_print("WAI: Error: I2C\n\r");
   }
 
-
-  res = i2c1_transmit(MPU_ADDR, txbuf, 2, rxbuf, 0, MPU_TIME_LIM);
-  if(res != MSG_OK){return FALSE; }
-
-
-  return TRUE;
 }
 
 
-//Initiate MPU
+//Update accelerometer axis values
+static bool mpu_acc_update(void){
+
+  msg_t res[3] = {MSG_OK, MSG_OK, MSG_OK};
+
+  //Temp calculation values
+  uint32_t x2, y2, z2;
+  float results = 0.0f;
+  
+  
+  //Read row axis data
+  res[0] = mpu_read_acc_axis(ACC_AXIS_X, &axis_row_x);
+  res[1] = mpu_read_acc_axis(ACC_AXIS_Y, &axis_row_y);
+  res[2] = mpu_read_acc_axis(ACC_AXIS_Z, &axis_row_z);
+
+
+  //If all row axis were reacived
+  if( (res[0] & res[1] & res[2]) != MSG_OK){
+    return false;
+  }
+
+  //Convert row to g's
+  axis_x = (float)axis_row_x * acc_scale_ref;
+  axis_y = (float)axis_row_y * acc_scale_ref;
+  axis_z = (float)axis_row_z * acc_scale_ref;
+
+
+
+
+  //Calculate angel in degree C
+
+  //Not required as center is zero
+  //axis_x -= ACC_XY_CENTER;
+  //axis_y-= ACC_XY_CENTER;
+  axis_z -= ACC_Z_CENTER;
+
+  //calculate square
+  x2 =   (uint32_t)(axis_x * axis_x);
+  y2 =   (uint32_t)(axis_y * axis_y);
+  z2 =   (uint32_t)(axis_z * axis_z);
+
+
+  //x-axis
+  results = sqrt(y2+z2);
+  results = axis_x / results;
+  axis_ang_x = atan(results);
+
+  //Y-axis
+  results = sqrt(x2+z2);
+  results = axis_y / results;
+  axis_ang_y = atan(results);
+
+  return true;
+}
+
+
+
+
+/**
+ * @brief Initiate MPU
+ */
 void mpu_init(void){
 
   msg_t res = MSG_OK;
@@ -145,24 +192,6 @@ void mpu_init(void){
 }
 
 
-//Check communication to MPU by requesting read value from check register
-void mpu_who_am_i(void) {
-
-  msg_t res = MSG_OK;
-  txbuf[0] = 0x75;
-
-  res = i2c1_transmit(MPU_ADDR, txbuf, 1, rxbuf, 1, MPU_TIME_LIM);
-
-  if(res == MSG_OK){
-    chprintf((BaseSequentialStream*)&SD2, "WAI: %d\n\r", rxbuf[0]);
-
-  }else{
-    serial_print("WAI: Error: I2C\n\r");
-  }
-
-}
-
-
 /**
  * @brief         Read accelerometer axis value
  * @param[in]     axis_select   select required axis to be read: ACC_AXIS_X, ACC_AXIS_Y, ACC_AXIS_Z
@@ -199,25 +228,52 @@ msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val){
 }
 
 
-
-
 /**
- * Update accelerometer axis values
+ * @brief Set accelerometter range
  */
-void mpu_acc_update(void){
+bool mpu_acc_range(AccelRange range){
 
-  mpu_read_acc_axis(ACC_AXIS_X, &xr_axis);
+  msg_t res = MSG_OK;
+
+  txbuf[0] = ACCEL_CONFIG;
+  txbuf[1] = range;
+
+  chMtxLock(&qmtx);
+
+  switch (range){
+
+    case ACCEL_RANGE_4G:{
+      acc_scale_ref = 4.0f / 32767.5f;
+      break;
+    }
+
+    case ACCEL_RANGE_8G:{
+      acc_scale_ref = 8.0f / 32767.5f;
+      break;
+    }
+
+    case ACCEL_RANGE_16G:{
+      acc_scale_ref = 16.0f / 32767.5f;
+      break;
+    }
+
+    case ACCEL_RANGE_2G:
+    default: {
+      acc_scale_ref = 2.0f / 32767.5f;
+      break;
+    }
+  }
 
 
-  xg_axis = (float)xr_axis * acc_scale_ref;
-  
-  chprintf((BaseSequentialStream*)&SD2, "x: %f\r\n", acc_scale_ref);
-  chprintf((BaseSequentialStream*)&SD2, "x: %d\r\n", xr_axis);
-  chprintf((BaseSequentialStream*)&SD2, "x: %.6f\r\n\n", xg_axis);
+  res = i2c1_transmit(MPU_ADDR, txbuf, 2, rxbuf, 0, MPU_TIME_LIM);
+  if(res != MSG_OK){return FALSE; }
 
+
+  chMtxUnlock(&qmtx);
+  return TRUE;
 }
 
-   
+
 
 /**
  * @brief Mpu reading thread
@@ -250,7 +306,6 @@ void mpum_thread(void *p){
 
 
 
-
 //Serial Commands
 /**
  * @brief Enable/Disable read operation
@@ -270,12 +325,38 @@ void serial_set_control(bool set){
 
 
 /**
- * @brief Request lates axis values
+ * @brief Request lates axis values in degrees
  */
-void serial_read_acc_axis(float *x_g){
+void serial_read_accaxis_deg(float *x, float *y){
   chMtxLock(&qmtx);
-    *x_g = xg_axis;
+
+    *x = axis_ang_x;
+    *y = axis_ang_y;
+
   chMtxUnlock(&qmtx);
+}
+
+
+/**
+ * @brief Request lates axis values in degrees
+ */
+void serial_read_accaxis_d(float *x, float *y){
+  chMtxLock(&qmtx);
+
+    *x = axis_x;
+    *y = axis_y;
+
+  chMtxUnlock(&qmtx);
+}
+
+
+/**
+ * @brief Request lates axis value in g's
+ */
+void serial_read_accaxis_g(float *x, float *y, float *z){
+  *x = axis_x;
+  *y = axis_y;
+  *z = axis_z;
 }
 
 

@@ -16,6 +16,16 @@
 extern THD_WORKING_AREA(ThMPU, MPU_THREAD_STACK_SIZE);
 
 
+
+
+//Besiline values (center) if accelerometer is placed on flat surface
+#define  ACC_XY_CENTER       0
+#define  ACC_Z_CENTER        1  
+
+
+
+
+
 /**
  * @brief Enum for setting range from, available range:
  *        2G, 4G, 8G, 16G 
@@ -84,20 +94,18 @@ typedef enum{
 
 //Function Prototypes
 void mpu_init(void);
+bool mpu_acc_range(AccelRange range);
 void mpum_thread(void *p);
-
-void mpu_who_am_i(void);
 msg_t mpu_read_acc_axis(AccAxis axis_select, uint16_t *axis_val);
-void mpu_acc_update(void);
+
 
 
 
 //Serial commands, function prototypes
 void serial_set_control(bool set);
-void serial_read_acc_axis(float *x_g);
-
-
-
+void serial_read_accaxis_deg(float *x, float *y);;
+void serial_read_accaxis_d(float *x, float *y);
+void serial_read_accaxis_g(float *x, float *y, float *z);
 
 
 #endif
