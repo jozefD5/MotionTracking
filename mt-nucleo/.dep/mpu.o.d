@@ -109,7 +109,15 @@ build/obj/mpu.o: ../mt-core/mpu9250/mpu.c \
  ../ChibiOS_21.11.1/os/hal/ports/STM32/LLD/SYSTICKv1/hal_st_lld.h \
  ../ChibiOS_21.11.1/os/hal/include/hal_mmc_spi.h \
  ../ChibiOS_21.11.1/os/hal/include/hal_serial_usb.h \
- ../mt-core/mpu9250/mpu.h ../mt-core/mpu9250/../mtprint/mtprint.h \
+ ../mt-core/mpu9250/mpu.h /usr/include/newlib/math.h \
+ /usr/include/newlib/sys/reent.h /usr/include/newlib/_ansi.h \
+ /usr/include/newlib/newlib.h /usr/include/newlib/_newlib_version.h \
+ /usr/include/newlib/sys/config.h /usr/include/newlib/machine/ieeefp.h \
+ /usr/include/newlib/sys/features.h /usr/include/newlib/sys/_types.h \
+ /usr/include/newlib/machine/_types.h \
+ /usr/include/newlib/machine/_default_types.h \
+ /usr/include/newlib/sys/lock.h /usr/include/newlib/sys/cdefs.h \
+ /usr/include/newlib/_ansi.h ../mt-core/mpu9250/../mtprint/mtprint.h \
  ../mt-core/mpu9250/../mti2c/mti2c1.h \
  ../mt-core/mpu9250/../../ChibiOS_21.11.1/os/hal/lib/streams/chprintf.h
 
@@ -340,6 +348,34 @@ cfg/mcuconf.h:
 ../ChibiOS_21.11.1/os/hal/include/hal_serial_usb.h:
 
 ../mt-core/mpu9250/mpu.h:
+
+/usr/include/newlib/math.h:
+
+/usr/include/newlib/sys/reent.h:
+
+/usr/include/newlib/_ansi.h:
+
+/usr/include/newlib/newlib.h:
+
+/usr/include/newlib/_newlib_version.h:
+
+/usr/include/newlib/sys/config.h:
+
+/usr/include/newlib/machine/ieeefp.h:
+
+/usr/include/newlib/sys/features.h:
+
+/usr/include/newlib/sys/_types.h:
+
+/usr/include/newlib/machine/_types.h:
+
+/usr/include/newlib/machine/_default_types.h:
+
+/usr/include/newlib/sys/lock.h:
+
+/usr/include/newlib/sys/cdefs.h:
+
+/usr/include/newlib/_ansi.h:
 
 ../mt-core/mpu9250/../mtprint/mtprint.h:
 

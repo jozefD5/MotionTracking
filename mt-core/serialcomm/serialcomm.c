@@ -22,19 +22,23 @@ THD_WORKING_AREA(ThdSerialComm, SERIAL_THREAD_STACK_SIZE);
 static mutex_t  qmtx;
 
 //Enable/disable reading of acc
-static bool read_enable = FALSE;
+static bool read_enable = TRUE;
+
+//Reading option 0=g's and 1=degrees, default option is g's
+static uint32_t readOption = 0;
+
 
 //Serial read character and charecter buffer
 msg_t strChar;                                  
-uint8_t  strbuf[SERIAL_BUFFER_SIZE];           
+static uint8_t  strbuf[SERIAL_BUFFER_SIZE];           
 
 //Read iteration counter
-int32_t rd_count = 0;
+static int32_t rd_count = 0;
 
-//Row axis value
-static uint16_t xr_axis = 0;
-
-
+//Axis value
+static float axis_x = 0.0f;
+static float axis_y = 0.0f;
+static float axis_z = 0.0f;
 
 
 
@@ -56,7 +60,7 @@ void serialcomm_thread(void *p) {
     chThdSleepMilliseconds(100); 
 
 
-
+ 
     
     while (true)
     {
@@ -76,14 +80,28 @@ void serialcomm_thread(void *p) {
         //Output section
         chMtxLock(&qmtx);
         if(read_enable && rd_count > SERIAL_COUNTER_LIMIT){
+            
+          
+            //Read accelerometer axis in required format, degrees or g's
+            if(readOption == 1){
 
-            //Rad axis
-            serial_read_acc_axis(&xr_axis);
+                //serial_read_accaxis_deg(&axis_x, &axis_y);
+                serial_read_accaxis_d(&axis_x, &axis_y);
 
+                //output data to serial
+                chprintf((BaseSequentialStream*)&SD2, "x: %.3f\r\n", axis_x);
+                chprintf((BaseSequentialStream*)&SD2, "y: %.3f\r\n\n", axis_y);
 
-            //Output data to serial
-            chprintf((BaseSequentialStream*)&SD2, "x: %x\r\n", xr_axis);
+            }else{
 
+                //serial_read_accaxis_deg(&axis_x, &axis_y);
+                serial_read_accaxis_g(&axis_x, &axis_y, &axis_z);
+
+                //output data to serial
+                chprintf((BaseSequentialStream*)&SD2, "x: %.3f\r\n", axis_x);
+                chprintf((BaseSequentialStream*)&SD2, "y: %.3f\r\n", axis_y);
+                chprintf((BaseSequentialStream*)&SD2, "z: %.3f\r\n\n", axis_z);
+            }
             rd_count = 0;
         }
         chMtxUnlock(&qmtx);
@@ -112,7 +130,6 @@ void commad_check(char* commandStrl){
             read_enable = TRUE;
         chMtxUnlock(&qmtx);
 
-
     //Stop motion tracking
     }else if( strcmp(commandStrl, SER_STOP) == 0 ){
         serial_print("cmd: mt stop\n\r");
@@ -123,6 +140,45 @@ void commad_check(char* commandStrl){
         chMtxUnlock(&qmtx);
 
 
+    //Set accelerometer reading format to degrees
+    }else if(strcmp(commandStrl, SER_REDG) == 0){
+        chMtxLock(&qmtx);
+            readOption = 1;
+        chMtxUnlock(&qmtx);
+
+    //Set accelerometer reading format to g's
+    }else if(strcmp(commandStrl, SER_REGS) == 0){
+        chMtxLock(&qmtx);
+            readOption = 0;
+        chMtxUnlock(&qmtx);
+
+
+    //Set accelerometer range to 2g
+    }else if(strcmp(commandStrl, SER_R02) == 0){
+        chMtxLock(&qmtx);
+            mpu_acc_range(ACCEL_RANGE_2G);
+        chMtxUnlock(&qmtx);
+
+    //Set accelerometer range to 4g
+    }else if(strcmp(commandStrl, SER_R04) == 0){
+        chMtxLock(&qmtx);
+            mpu_acc_range(ACCEL_RANGE_4G);
+        chMtxUnlock(&qmtx);
+
+    //Set accelerometer range to 8g
+    }else if(strcmp(commandStrl, SER_R08) == 0){
+        chMtxLock(&qmtx);
+            mpu_acc_range(ACCEL_RANGE_8G);
+        chMtxUnlock(&qmtx);
+    
+    //Set accelerometer range to 16g
+    }else if(strcmp(commandStrl, SER_R16) == 0){
+        chMtxLock(&qmtx);
+            mpu_acc_range(ACCEL_RANGE_16G);
+        chMtxUnlock(&qmtx);
+    
+    
+    //Default, unknown command
     }else{
         serial_print("cmd: unknown command: ");
         serial_print(commandStrl);
